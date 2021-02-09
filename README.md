@@ -1,118 +1,132 @@
 # anyrun_to_misp
 
-## 概要
+## Overview
+This script stores the information analyzed by ANY.RUN in MISP.
 
-	ANY.RUNで分析した情報をMISPに格納します。
+It is possible to download MISP format files with the standard function of ANY.RUN. However, this file also contains a lot of non-IOC information.
+Therefore, this script is based on the MISP format file that can be downloaded from ANY.RUN, but omits information that seems unnecessary for analysis. This will allow this script to focus on the IOC and reference information when registering with MISP.
 
-ANY.RUNの標準機能でMISPフォーマットファイルをダウンロードすることが可能ですが、このファイルにはIOC以外の情報も多く含まれます。
-本スクリプトでは、ANY.RUNからダウンロードできるMISPフォーマットファイルをベースとしつつ、分析に不要と思われる情報を省き、IOCと参考情報に絞ってMISPへ登録を行います。
 
-## ライセンス
+## license
 
-このソフトウェアはBSDライセンスの下でリリースされています。
-同梱のLICENSE.txtを参照してください。
+This software is released under the BSD License, see LICENSE.txt.
 
-## 動作環境
 
-* python3.6以降
-* Pymisp2.4.135.3以降
-* MISP2.4.135以降
+## Environment
 
-## 追加インストールが必要なpythonモジュール
+* python3.6 or later
+* Pymisp2.4.135.3 or later
+* MISP2.4.135 or later
+
+
+## Python module
 
 * `pip3 install pymisp`
 * `pip3 install requests`
 
-## 使用法
 
-#### 1 ANY.RUNのAPIキー確認
+## How to use
 
-ANY.RUNにログインし、データ取得対象アカウントのＡＰＩキーを確認してください。
-ここで確認した内容は、以後の項目で利用します。
 
-#### 2 必要な定数の設定
+#### 1 API key confirmation of ANY.RUN
 
-const.pyを開き、以下設定を行ってください。
+Please log in to ANY.RUN and check the API key of the account for which data is to be acquired.
+The contents confirmed here will be used in the following items
 
-#### 2-1 ANY.RUNのAPIキー
 
-「1 ANY.RUNのAPIキー確認」
-で確認したAPIキーを下記定数に設定してください。
+#### 2 Setting the required constants
 
-対象定数：
+Open const.py and make the following settings
+
+
+#### 2-1 ANY.RUN API key
+
+Set the API key confirmed in "1 API key confirmation of ANY.RUN" to the following constant.
+
+Target constant:
 `ANYRUN_APIKEY`
 
-#### 2-2 ダウンロードしたファイルの格納先
 
-下記定数に指定したフォルダ以下に、ANY.RUNからダウンロードしたファイルが保存されます。
+#### 2-2 Storage location of downloaded files
 
-対象定数：
+The file downloaded from ANY.RUN is saved under the folder specified in the constant below.
+
+Target constant:
 `DOWNLOAD_DIRECTORY`
 
-格納されるファイル：
-* 分析履歴ファイル：　分析結果ごとに後述の各ファイルのダウンロードリンクが記載されているファイル
-	* ダウンロードURL：https://api.any.run/v1/analysis/?skip=0
-* MISPフォーマットファイル：　分析結果情報をMISPでインポートできる形にしたファイル
-	* ダウンロードURL：https://api.any.run/report/分析ID/summary/misp
-* サマリファイル：　分析結果のサマリを記載したJSONファイル。現状は本スクリプトでは利用していないが参考のためにダウンロードしている
-	* ダウンロードURL：https://api.any.run/report/分析ID/summary/json
-* IOCファイル：　分析結果から、IOC部分だけを抽出したファイル
-	* ダウンロードURL：https://api.any.run/report/分析ID/ioc/json
+Download Files:
 
-#### 2-3 登録したイベントの最新の日付を記録する為のファイル
+* Analysis history file: A file that contains download links for each file described below for each analysis result.
+	* URL：https://api.any.run/v1/analysis/?skip=0
+* MISP format file: A file in which analysis result information can be imported by MISP.
+	* URL：https://api.any.run/report/analysis_id/summary/misp
+* Summary file: A JSON file that contains a summary of the analysis results. This file is not currently used in this script, but is downloaded for reference.
+	* URL：https://api.any.run/report/analysis_id/summary/json
+* IOC file: A file in which only the IOC part is extracted from the analysis results
+	* URL：https://api.any.run/report/analysis_id/ioc/json
 
-下記定数で定義したファイルに、MISP登録を完了したANY.RUN分析結果の中で最新の分析日付を保存しておき、次回処理時にはその日付より新しい分析結果のみをMISP登録します。
 
-対象定数：
+#### 2-3 File to record the latest date of the registered event
+
+Save the latest analysis date among the ANY.RUN analysis results that have completed MISP registration in the file defined by the following constants. At the next processing, only the analysis results newer than that date will be registered in MISP.
+
+Target constant:
 `EVENT_DATE_DAT`
 
-#### 2-4 MISP設定
 
-下記定数に、登録先MISPと、登録に利用するユーザの認証キー情報を設定してください。
-尚、ここで設定するユーザには、「タグ追加」の権限が必要です。
+#### 2-4 MISP settings
 
-対象定数：
-* MISPのURL
+Set the registration destination MISP and the authentication key information of the user used for registration in the following constants.
+In addition, the user set here needs permission to "add tag".
+
+Target constant:
+
+* URL of MISP
 	* `MISP_URL`
-* ユーザ認証キー
+* User authentication key
 	* `MISP_AUTHKEY`
 
-#### 2-5 メール送信設定
 
-下記の各定数を定義する事でメール通知が行われます。
-メール通知が不用な場合は、MAIL_TOをNoneとしてください。
-SMTPサーバ情報については、利用可能なご自身のメールアカウント情報をご確認ください。
+#### 2-5 Email settings
 
-対象定数：
-* メール送信元
+Email notification will be sent by defining each of the following constants.
+If you don't need email notifications, set MAIL_TO to None.
+For SMTP server information, please check your own available email account information.
+
+Target constant:
+
+* Email sender
 	* `MAIL_FROM`
-* メール送信先
+* Email destination
 	* `MAIL_TO`
-* メール件名
-	* ここで設定した文字列に実行日時を連結した件名でメールが送信されます
+* Email subject
+	* An email will be sent with the subject of the execution date and time concatenated with the character string set here.
 	* `MAIL_SUBJECT`
-* SMTPサーバ接続先
+* SMTP server connection destination
 	* `MAIL_SMTP_SERVER`
-* SMTPサーバユーザ名
+* SMTP server username
 	* `MAIL_SMTP_USER`
-* SMTPサーバパスワード
+* SMTP server password
 	* `MAIL_SMTP_PASSWORD`
 
-#### 3 スクリプトの実行
 
-下記コマンドで実行可能です。
+#### 3 Script execution
+
+It can be executed with the following command.
 
 `python3 anyrun_to_misp.py`
 
-## 備考
 
-* スクリプト実行後にスクリプトと同ディレクトリ内に作成されるevent_date_datファイルは、MISPインポート済みデータの管理のために必要です。原則操作しないでください
-* 新規に登録を行うイベントのuuidが既にMISPに登録されている場合、そのイベントはスキップされ登録を行いません。その際「Event already exists」という出力が行われることがありますが、動作結果に影響ありません。
-* MISPインポート時、ANY.RUNあらダウンロードした分析結果データにMISP上に存在しないタグが設定されている倍は、タグを新規追加します。そのため、インポートに利用するユーザには、「タグ追加」の権限が必要となります
-* 初回コマンド実行時、登録データが多いと途中で処理がエラーになる場合があります。その場合はevent_date_datファイルが作成されているかを確認し、作成されていれば削除してから、再度コマンドを実行してください。  
-（エラーが発生するまでのイベントの登録は出来ているため、それらは無視して、未取り込みの分析結果をMISP登録します）
+## Remarks
 
-## 関連項目
+* After executing the script, the event_date_dat file created in the same directory as the script is required for managing MISP imported data. In principle, do not operate.
+* If the uuid of the event to be registered is already registered in MISP, the registration of that event will be skipped and the output "Event already exists" will be output. This does not affect the operation result.
+* When importing MISP, the analysis result data downloaded from ANY.RUN may have tags that do not exist on MISP. In this case, add a new tag to MISP. Therefore, the user used for import needs "Add Tag" permission.
+* When executing the first command, if there is a lot of registered data, an error may occur in the process. In that case, check if the event_date_dat file has been created. If it has been created, delete it and then execute the command again.
+(Event registration is complete until the error occurs. Therefore, ignore them and register the uncaptured analysis results in MISP)
 
-* MISPプロジェクト : http://www.misp-project.org/
+
+## Related item
+
+* MISP project : http://www.misp-project.org/
 * ANY.RUN : https://app.any.run/
